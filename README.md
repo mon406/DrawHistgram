@@ -1,3 +1,3 @@
 # DrawHistgram
 Draw Histgram for Image, 
-ProgramingLanguage : c++
+ProgramingLanguage : c(c++)
