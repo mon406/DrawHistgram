@@ -1,2 +1,3 @@
 # DrawHistgram
-Draw Histgram for Image
+Draw Histgram for Image, 
+ProgramingLanguage : c++
