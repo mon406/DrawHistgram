@@ -4,178 +4,15 @@
 #include "main.h"
 
 
-/* “üo—Í‰æ‘œ */
-string win_dst_hist = "dst_hist";	// o—Í‰æ‘œƒEƒBƒ“ƒhƒE
-Mat Image_hist;		// ƒqƒXƒgƒOƒ‰ƒ€‰æ‘œ
+/* å…¥å‡ºåŠ›ç”»åƒ */
+Mat Image_hist;		// ãƒ’ã‚¹ãƒˆã‚°ãƒ©ãƒ ç”»åƒ
 
-/* ŠÖ”éŒ¾ */
-void DrawHist(Mat& targetImg);					// ƒqƒXƒgƒOƒ‰ƒ€ŒvZ&•`‰æ
-void DrawHist(Mat& targetImg, Mat& dstHistImg);	// ƒqƒXƒgƒOƒ‰ƒ€ŒvZ
+/* é–¢æ•°å®£è¨€ */
+void DrawHist(Mat& targetImg, Mat& dstHistImg);	// ãƒ’ã‚¹ãƒˆã‚°ãƒ©ãƒ è¨ˆç®—
 
 
-/* ŠÖ” */
-// ƒqƒXƒgƒOƒ‰ƒ€ŒvZ&•`‰æ
-void DrawHist(Mat& targetImg) {
-	if (targetImg.channels() == 3) {
-		Mat channels[3];
-		int cha_index, ha_index;
-		uchar Gray;
-		for (int channel = 0; channel < 3; channel++) {
-			channels[channel] = Mat(Size(targetImg.cols, targetImg.rows), CV_8UC1);
-			for (int i = 0; i < targetImg.rows; i++) {
-				for (int j = 0; j < targetImg.cols; j++) {
-					cha_index = i * targetImg.cols * 3 + j * 3 + channel;
-					ha_index = i * targetImg.cols + j;
-					Gray = (uchar)targetImg.data[cha_index];
-					channels[channel].data[ha_index] = Gray;
-				}
-			}
-		}
-
-		/* •Ï”éŒ¾ */
-		Mat R, G, B;
-		int hist_size = 256;
-		float range[] = { 0, 256 };
-		const float* hist_range = range;
-
-		/* ‰æ‘f”‚ğ”‚¦‚é */
-		calcHist(&channels[0], 1, 0, Mat(), B, 1, &hist_size, &hist_range);
-		calcHist(&channels[1], 1, 0, Mat(), G, 1, &hist_size, &hist_range);
-		calcHist(&channels[2], 1, 0, Mat(), R, 1, &hist_size, &hist_range);
-
-		/* Šm”FiƒqƒXƒgƒOƒ‰ƒ€‚‚³ŒÅ’è‚Ì‚½‚ßj*/
-		int MAX_COUNT = 0;
-		double Min_count[3], Max_count[3];
-		for (int ch = 0; ch < 3; ch++) {
-			if (ch == 0) { minMaxLoc(B, &Min_count[ch], &Max_count[ch]); }
-			else if (ch == 1) { minMaxLoc(G, &Min_count[ch], &Max_count[ch]); }
-			else if (ch == 2) { minMaxLoc(R, &Min_count[ch], &Max_count[ch]); }
-			if (Max_count[ch] > MAX_COUNT) {
-				MAX_COUNT = (int)Max_count[ch];
-			}
-		}
-		//MAX_COUNT = 80000;
-
-		/* ƒqƒXƒgƒOƒ‰ƒ€¶¬—p‚Ì‰æ‘œ‚ğì¬ */
-		Image_hist = Mat(Size(276, 320), CV_8UC3, Scalar(255, 255, 255));
-
-		/* ”wŒi‚ğ•`‰æiŒ©‚â‚·‚­‚·‚é‚½‚ß‚ÉƒqƒXƒgƒOƒ‰ƒ€•”•ª‚Ì”wŒi‚ğƒOƒŒ[‚É‚·‚éj */
-		for (int i = 0; i < 3; i++) {
-			rectangle(Image_hist, Point(10, 10 + 100 * i), Point(265, 100 + 100 * i), Scalar(230, 230, 230), -1);
-		}
-
-		for (int i = 0; i < 256; i++) {
-			line(Image_hist, Point(10 + i, 100), Point(10 + i, 100 - (int)((float)(R.at<float>(i) / MAX_COUNT) * 80)), Scalar(0, 0, 255), 1, 8, 0);
-			line(Image_hist, Point(10 + i, 200), Point(10 + i, 200 - (int)((float)(G.at<float>(i) / MAX_COUNT) * 80)), Scalar(0, 255, 0), 1, 8, 0);
-			line(Image_hist, Point(10 + i, 300), Point(10 + i, 300 - (int)((float)(B.at<float>(i) / MAX_COUNT) * 80)), Scalar(255, 0, 0), 1, 8, 0);
-
-			if (i % 10 == 0) {		// ‰¡²10‚¸‚Âƒ‰ƒCƒ“‚ğˆø‚­
-				line(Image_hist, Point(10 + i, 100), Point(10 + i, 10),
-					Scalar(170, 170, 170), 1, 8, 0);
-				line(Image_hist, Point(10 + i, 200), Point(10 + i, 110),
-					Scalar(170, 170, 170), 1, 8, 0);
-				line(Image_hist, Point(10 + i, 300), Point(10 + i, 210),
-					Scalar(170, 170, 170), 1, 8, 0);
-
-				if (i % 50 == 0) {	// ‰¡²50‚¸‚Â”Z‚¢ƒ‰ƒCƒ“‚ğˆø‚­
-					line(Image_hist, Point(10 + i, 100), Point(10 + i, 10),
-						Scalar(50, 50, 50), 1, 8, 0);
-					line(Image_hist, Point(10 + i, 200), Point(10 + i, 110),
-						Scalar(50, 50, 50), 1, 8, 0);
-					line(Image_hist, Point(10 + i, 300), Point(10 + i, 210),
-						Scalar(50, 50, 50), 1, 8, 0);
-				}
-			}
-		}
-
-		/* ƒqƒXƒgƒOƒ‰ƒ€î•ñ•\¦ */
-		cout << "--- ƒqƒXƒgƒOƒ‰ƒ€î•ñ -------------------------" << endl;
-		cout << " RGB‰æ‘œ" << endl;
-		cout << " MAX_COUNT : " << MAX_COUNT << endl;
-		cout << "----------------------------------------------" << endl;
-
-		/* ƒqƒXƒgƒOƒ‰ƒ€‰æ‘œ‚Ì•\¦ & •Û‘¶ */
-		string file_dst_hist = "dst_hist.jpg";		// o—Í‰æ‘œ‚Ìƒtƒ@ƒCƒ‹–¼
-		namedWindow(win_dst_hist, WINDOW_AUTOSIZE);	// ƒEƒBƒ“ƒhƒE¶¬
-		imshow(win_dst_hist, Image_hist);				// o—Í‰æ‘œ‚ğ•\¦
-		imwrite(file_dst_hist, Image_hist);			// o—Í‰æ‘œ‚Ì•Û‘¶
-
-		waitKey(0);			// ƒL[“ü—Í‘Ò‚¿
-		destroyWindow(win_dst_hist);
-	}
-	else if (targetImg.channels() == 1) {
-		Mat channels;
-		int ha_index;
-		uchar Gray;
-		channels = Mat(Size(targetImg.cols, targetImg.rows), CV_8UC1);
-		for (int i = 0; i < targetImg.rows; i++) {
-			for (int j = 0; j < targetImg.cols; j++) {
-				ha_index = i * targetImg.cols + j;
-				Gray = (uchar)targetImg.data[ha_index];
-				channels.data[ha_index] = Gray;
-			}
-		}
-
-		/* •Ï”éŒ¾ */
-		Mat GRAY;
-		int hist_size = 256;
-		float range[] = { 0, 256 };
-		const float* hist_range = range;
-
-		/* ‰æ‘f”‚ğ”‚¦‚é */
-		calcHist(&channels, 1, 0, Mat(), GRAY, 1, &hist_size, &hist_range);
-
-		/* Šm”FiƒqƒXƒgƒOƒ‰ƒ€‚‚³ŒÅ’è‚Ì‚½‚ßj*/
-		int MAX_COUNT = 0;
-		double Min_count, Max_count;
-		minMaxLoc(GRAY, &Min_count, &Max_count);
-		if (Max_count > MAX_COUNT) {
-			MAX_COUNT = (int)Max_count;
-		}
-		//MAX_COUNT = 80000;
-
-		/* ƒqƒXƒgƒOƒ‰ƒ€¶¬—p‚Ì‰æ‘œ‚ğì¬ */
-		Image_hist = Mat(Size(276, 120), CV_8UC3, Scalar(255, 255, 255));
-
-		/* ”wŒi‚ğ•`‰æiŒ©‚â‚·‚­‚·‚é‚½‚ß‚ÉƒqƒXƒgƒOƒ‰ƒ€•”•ª‚Ì”wŒi‚ğƒOƒŒ[‚É‚·‚éj */
-		rectangle(Image_hist, Point(10, 10), Point(265, 100), Scalar(230, 230, 230), -1);
-
-		for (int i = 0; i < 256; i++) {
-			line(Image_hist, Point(10 + i, 100), Point(10 + i, 100 - (int)((float)(GRAY.at<float>(i) / MAX_COUNT) * 80)), Scalar(0, 0, 0), 1, 8, 0);
-
-			if (i % 10 == 0) {		// ‰¡²10‚¸‚Âƒ‰ƒCƒ“‚ğˆø‚­
-				line(Image_hist, Point(10 + i, 100), Point(10 + i, 10),
-					Scalar(170, 170, 170), 1, 8, 0);
-
-				if (i % 50 == 0) {	// ‰¡²50‚¸‚Â”Z‚¢ƒ‰ƒCƒ“‚ğˆø‚­
-					line(Image_hist, Point(10 + i, 100), Point(10 + i, 10),
-						Scalar(50, 50, 50), 1, 8, 0);
-				}
-			}
-		}
-
-		/* ƒqƒXƒgƒOƒ‰ƒ€î•ñ•\¦ */
-		cout << "--- ƒqƒXƒgƒOƒ‰ƒ€î•ñ ------------------------------" << endl;
-		cout << " GrayScale‰æ‘œ" << endl;
-		cout << " MAX_COUNT : " << MAX_COUNT << endl;
-		cout << "---------------------------------------------------" << endl;
-
-		/* ƒqƒXƒgƒOƒ‰ƒ€‰æ‘œ‚Ì•\¦ & •Û‘¶ */
-		string file_dst_hist = "dst_hist.jpg";		// o—Í‰æ‘œ‚Ìƒtƒ@ƒCƒ‹–¼
-		namedWindow(win_dst_hist, WINDOW_AUTOSIZE);	// ƒEƒBƒ“ƒhƒE¶¬
-		imshow(win_dst_hist, Image_hist);				// o—Í‰æ‘œ‚ğ•\¦
-		imwrite(file_dst_hist, Image_hist);			// o—Í‰æ‘œ‚Ì•Û‘¶
-
-		waitKey(0);			// ƒL[“ü—Í‘Ò‚¿
-		destroyWindow(win_dst_hist);
-	}
-	else {
-		cout << "ERROR! drawHist_Color()  :  Can't draw Histgram because of its channel." << endl;
-	}
-	cout << endl;
-}
-
-// ƒqƒXƒgƒOƒ‰ƒ€ŒvZ
+/* é–¢æ•° */
+// ãƒ’ã‚¹ãƒˆã‚°ãƒ©ãƒ è¨ˆç®—
 void DrawHist(Mat& targetImg, Mat& dstHistImg) {
 	dstHistImg = Mat::zeros(targetImg.size(), CV_8U);
 
@@ -195,18 +32,18 @@ void DrawHist(Mat& targetImg, Mat& dstHistImg) {
 			}
 		}
 
-		/* •Ï”éŒ¾ */
+		/* å¤‰æ•°å®£è¨€ */
 		Mat R, G, B;
 		int hist_size = 256;
 		float range[] = { 0, 256 };
 		const float* hist_range = range;
 
-		/* ‰æ‘f”‚ğ”‚¦‚é */
+		/* ç”»ç´ æ•°ã‚’æ•°ãˆã‚‹ */
 		calcHist(&channels[0], 1, 0, Mat(), B, 1, &hist_size, &hist_range);
 		calcHist(&channels[1], 1, 0, Mat(), G, 1, &hist_size, &hist_range);
 		calcHist(&channels[2], 1, 0, Mat(), R, 1, &hist_size, &hist_range);
 
-		/* Šm”FiƒqƒXƒgƒOƒ‰ƒ€‚‚³ŒÅ’è‚Ì‚½‚ßj*/
+		/* ç¢ºèªï¼ˆãƒ’ã‚¹ãƒˆã‚°ãƒ©ãƒ é«˜ã•å›ºå®šã®ãŸã‚ï¼‰*/
 		int MAX_COUNT = 0;
 		double Min_count[3], Max_count[3];
 		for (int ch = 0; ch < 3; ch++) {
@@ -219,10 +56,10 @@ void DrawHist(Mat& targetImg, Mat& dstHistImg) {
 		}
 		//MAX_COUNT = 80000;
 
-		/* ƒqƒXƒgƒOƒ‰ƒ€¶¬—p‚Ì‰æ‘œ‚ğì¬ */
+		/* ãƒ’ã‚¹ãƒˆã‚°ãƒ©ãƒ ç”Ÿæˆç”¨ã®ç”»åƒã‚’ä½œæˆ */
 		Image_hist = Mat(Size(276, 320), CV_8UC3, Scalar(255, 255, 255));
 
-		/* ”wŒi‚ğ•`‰æiŒ©‚â‚·‚­‚·‚é‚½‚ß‚ÉƒqƒXƒgƒOƒ‰ƒ€•”•ª‚Ì”wŒi‚ğƒOƒŒ[‚É‚·‚éj */
+		/* èƒŒæ™¯ã‚’æç”»ï¼ˆè¦‹ã‚„ã™ãã™ã‚‹ãŸã‚ã«ãƒ’ã‚¹ãƒˆã‚°ãƒ©ãƒ éƒ¨åˆ†ã®èƒŒæ™¯ã‚’ã‚°ãƒ¬ãƒ¼ã«ã™ã‚‹ï¼‰ */
 		for (int i = 0; i < 3; i++) {
 			rectangle(Image_hist, Point(10, 10 + 100 * i), Point(265, 100 + 100 * i), Scalar(230, 230, 230), -1);
 		}
@@ -232,7 +69,7 @@ void DrawHist(Mat& targetImg, Mat& dstHistImg) {
 			line(Image_hist, Point(10 + i, 200), Point(10 + i, 200 - (int)((float)(G.at<float>(i) / MAX_COUNT) * 80)), Scalar(0, 255, 0), 1, 8, 0);
 			line(Image_hist, Point(10 + i, 300), Point(10 + i, 300 - (int)((float)(B.at<float>(i) / MAX_COUNT) * 80)), Scalar(255, 0, 0), 1, 8, 0);
 
-			if (i % 10 == 0) {		// ‰¡²10‚¸‚Âƒ‰ƒCƒ“‚ğˆø‚­
+			if (i % 10 == 0) {		// æ¨ªè»¸10ãšã¤ãƒ©ã‚¤ãƒ³ã‚’å¼•ã
 				line(Image_hist, Point(10 + i, 100), Point(10 + i, 10),
 					Scalar(170, 170, 170), 1, 8, 0);
 				line(Image_hist, Point(10 + i, 200), Point(10 + i, 110),
@@ -240,7 +77,7 @@ void DrawHist(Mat& targetImg, Mat& dstHistImg) {
 				line(Image_hist, Point(10 + i, 300), Point(10 + i, 210),
 					Scalar(170, 170, 170), 1, 8, 0);
 
-				if (i % 50 == 0) {	// ‰¡²50‚¸‚Â”Z‚¢ƒ‰ƒCƒ“‚ğˆø‚­
+				if (i % 50 == 0) {	// æ¨ªè»¸50ãšã¤æ¿ƒã„ãƒ©ã‚¤ãƒ³ã‚’å¼•ã
 					line(Image_hist, Point(10 + i, 100), Point(10 + i, 10),
 						Scalar(50, 50, 50), 1, 8, 0);
 					line(Image_hist, Point(10 + i, 200), Point(10 + i, 110),
@@ -251,13 +88,13 @@ void DrawHist(Mat& targetImg, Mat& dstHistImg) {
 			}
 		}
 
-		/* ƒqƒXƒgƒOƒ‰ƒ€î•ñ•\¦ */
-		cout << "--- ƒqƒXƒgƒOƒ‰ƒ€î•ñ -------------------------" << endl;
-		cout << " RGB‰æ‘œ" << endl;
+		/* ãƒ’ã‚¹ãƒˆã‚°ãƒ©ãƒ æƒ…å ±è¡¨ç¤º */
+		cout << "--- ãƒ’ã‚¹ãƒˆã‚°ãƒ©ãƒ æƒ…å ± -------------------------" << endl;
+		cout << " RGBç”»åƒ" << endl;
 		cout << " MAX_COUNT : " << MAX_COUNT << endl;
 		cout << "----------------------------------------------" << endl;
 
-		/* ƒqƒXƒgƒOƒ‰ƒ€‰æ‘œ‚Ìo—Í */
+		/* ãƒ’ã‚¹ãƒˆã‚°ãƒ©ãƒ ç”»åƒã®å‡ºåŠ› */
 		Image_hist.copyTo(dstHistImg);
 	}
 	else if (targetImg.channels() == 1) {
@@ -273,16 +110,16 @@ void DrawHist(Mat& targetImg, Mat& dstHistImg) {
 			}
 		}
 
-		/* •Ï”éŒ¾ */
+		/* å¤‰æ•°å®£è¨€ */
 		Mat GRAY;
 		int hist_size = 256;
 		float range[] = { 0, 256 };
 		const float* hist_range = range;
 
-		/* ‰æ‘f”‚ğ”‚¦‚é */
+		/* ç”»ç´ æ•°ã‚’æ•°ãˆã‚‹ */
 		calcHist(&channels, 1, 0, Mat(), GRAY, 1, &hist_size, &hist_range);
 
-		/* Šm”FiƒqƒXƒgƒOƒ‰ƒ€‚‚³ŒÅ’è‚Ì‚½‚ßj*/
+		/* ç¢ºèªï¼ˆãƒ’ã‚¹ãƒˆã‚°ãƒ©ãƒ é«˜ã•å›ºå®šã®ãŸã‚ï¼‰*/
 		int MAX_COUNT = 0;
 		double Min_count, Max_count;
 		minMaxLoc(GRAY, &Min_count, &Max_count);
@@ -291,33 +128,33 @@ void DrawHist(Mat& targetImg, Mat& dstHistImg) {
 		}
 		//MAX_COUNT = 80000;
 
-		/* ƒqƒXƒgƒOƒ‰ƒ€¶¬—p‚Ì‰æ‘œ‚ğì¬ */
+		/* ãƒ’ã‚¹ãƒˆã‚°ãƒ©ãƒ ç”Ÿæˆç”¨ã®ç”»åƒã‚’ä½œæˆ */
 		Image_hist = Mat(Size(276, 120), CV_8UC3, Scalar(255, 255, 255));
 
-		/* ”wŒi‚ğ•`‰æiŒ©‚â‚·‚­‚·‚é‚½‚ß‚ÉƒqƒXƒgƒOƒ‰ƒ€•”•ª‚Ì”wŒi‚ğƒOƒŒ[‚É‚·‚éj */
+		/* èƒŒæ™¯ã‚’æç”»ï¼ˆè¦‹ã‚„ã™ãã™ã‚‹ãŸã‚ã«ãƒ’ã‚¹ãƒˆã‚°ãƒ©ãƒ éƒ¨åˆ†ã®èƒŒæ™¯ã‚’ã‚°ãƒ¬ãƒ¼ã«ã™ã‚‹ï¼‰ */
 		rectangle(Image_hist, Point(10, 10), Point(265, 100), Scalar(230, 230, 230), -1);
 
 		for (int i = 0; i < 256; i++) {
 			line(Image_hist, Point(10 + i, 100), Point(10 + i, 100 - (int)((float)(GRAY.at<float>(i) / MAX_COUNT) * 80)), Scalar(0, 0, 0), 1, 8, 0);
 
-			if (i % 10 == 0) {		// ‰¡²10‚¸‚Âƒ‰ƒCƒ“‚ğˆø‚­
+			if (i % 10 == 0) {		// æ¨ªè»¸10ãšã¤ãƒ©ã‚¤ãƒ³ã‚’å¼•ã
 				line(Image_hist, Point(10 + i, 100), Point(10 + i, 10),
 					Scalar(170, 170, 170), 1, 8, 0);
 
-				if (i % 50 == 0) {	// ‰¡²50‚¸‚Â”Z‚¢ƒ‰ƒCƒ“‚ğˆø‚­
+				if (i % 50 == 0) {	// æ¨ªè»¸50ãšã¤æ¿ƒã„ãƒ©ã‚¤ãƒ³ã‚’å¼•ã
 					line(Image_hist, Point(10 + i, 100), Point(10 + i, 10),
 						Scalar(50, 50, 50), 1, 8, 0);
 				}
 			}
 		}
 
-		/* ƒqƒXƒgƒOƒ‰ƒ€î•ñ•\¦ */
-		cout << "--- ƒqƒXƒgƒOƒ‰ƒ€î•ñ ------------------------------" << endl;
-		cout << " GrayScale‰æ‘œ" << endl;
+		/* ãƒ’ã‚¹ãƒˆã‚°ãƒ©ãƒ æƒ…å ±è¡¨ç¤º */
+		cout << "--- ãƒ’ã‚¹ãƒˆã‚°ãƒ©ãƒ æƒ…å ± ------------------------------" << endl;
+		cout << " GrayScaleç”»åƒ" << endl;
 		cout << " MAX_COUNT : " << MAX_COUNT << endl;
 		cout << "---------------------------------------------------" << endl;
 
-		/* ƒqƒXƒgƒOƒ‰ƒ€‰æ‘œ‚Ìo—Í */
+		/* ãƒ’ã‚¹ãƒˆã‚°ãƒ©ãƒ ç”»åƒã®å‡ºåŠ› */
 		Image_hist.copyTo(dstHistImg);
 	}
 	else {
